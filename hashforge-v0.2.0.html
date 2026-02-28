@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HashForge</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=VT323&family=Inconsolata:wght@400;500;600&display=swap');
+  :root {
+    --green:#00ff41;--green-dim:#00cc35;--green-dark:#003b0f;
+    --green-glow:rgba(0,255,65,0.1);--bg:#020a04;--bg2:#061209;
+    --border:#00ff4144;--text:#dfffea;--text-dim:#6daa7a;
+    --red:#ff3131;--yellow:#ffe533;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Inconsolata',monospace;font-size:24px;line-height:1.7;min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.07) 2px,rgba(0,0,0,0.07) 4px);pointer-events:none;z-index:9999;}
+  @keyframes flicker{0%,100%{opacity:1;}93%{opacity:.97;}96%{opacity:.99;}}
+  body{animation:flicker 10s infinite;}
+  .container{max-width:920px;margin:0 auto;padding:24px 20px;}
+  header{border-bottom:1px solid var(--border);padding-bottom:16px;margin-bottom:24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+  .logo{font-family:'VT323',monospace;font-size:52px;color:var(--green);text-shadow:0 0 20px var(--green),0 0 40px rgba(0,255,65,.25);letter-spacing:6px;line-height:1;}
+  .logo-sub{color:var(--text-dim);font-size:15px;letter-spacing:2px;margin-top:4px;}
+  .status-bar{margin-left:auto;display:flex;gap:20px;align-items:center;font-size:13px;color:var(--text-dim);letter-spacing:1px;}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);display:inline-block;margin-right:6px;animation:pulse 2.5s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.2;}}
+  .panel{background:var(--bg2);border:1px solid var(--border);padding:18px;margin-bottom:14px;position:relative;}
+  .panel::before{content:'';position:absolute;top:0;left:0;width:2px;height:100%;background:linear-gradient(to bottom,var(--green),transparent);opacity:.6;}
+  .section-label{font-size:15px;letter-spacing:2px;color:var(--text-dim);margin-bottom:12px;text-transform:uppercase;}
+  .phrase-input{width:100%;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--green);font-family:'Inconsolata',monospace;font-size:18px;padding:8px 0;outline:none;caret-color:var(--green);letter-spacing:1px;}
+  .phrase-input::placeholder{color:var(--text-dim);font-size:14px;}
+  .phrase-input:focus{border-bottom-color:var(--green);text-shadow:0 0 8px rgba(0,255,65,.3);}
+  .normalized-preview{margin-top:10px;font-size:16px;color:var(--text-dim);min-height:18px;letter-spacing:1px;}
+  .norm-val{color:var(--green-dim);letter-spacing:2px;word-break:break-all;}
+  .algo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:8px;}
+  .algo-btn{background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:'Inconsolata',monospace;font-size:14px;padding:10px 12px;cursor:pointer;text-align:left;transition:all .12s;letter-spacing:1px;}
+  .algo-btn:hover{border-color:var(--green-dim);color:var(--text);background:var(--green-glow);}
+  .algo-family{font-size:13px;color:var(--text-dim);display:block;margin-bottom:3px;letter-spacing:2px;}
+  .algo-note{font-size:13px;color:var(--text-dim);display:block;margin-top:2px;letter-spacing:0;}
+  .algo-btn:hover .algo-family{color:var(--green-dim);}
+  .sha1-warning{margin-top:16px;border:1px solid rgba(255,51,49,.25);background:rgba(255,51,49,.04);padding:12px 14px;}
+  .sha1-warning-label{font-size:12px;letter-spacing:2px;color:var(--red);margin-bottom:6px;text-transform:uppercase;}
+  .sha1-warning-desc{font-size:16px;color:var(--text-dim);line-height:1.7;letter-spacing:.5px;}
+  .sha1-warning-desc strong{color:var(--red);}
+  .algo-btn-warn{border-color:rgba(255,51,49,.3)!important;color:var(--red)!important;opacity:.8;}
+  .algo-btn-warn .algo-family{color:rgba(255,51,49,.6)!important;}
+  .algo-btn-warn .algo-note{color:rgba(255,51,49,.5)!important;}
+  .algo-btn-warn:hover{border-color:var(--red)!important;background:rgba(255,51,49,.08)!important;opacity:1;}
+  .pipeline-area{min-height:52px;border:1px dashed var(--border);padding:10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:rgba(0,0,0,.25);}
+  .pipeline-empty{color:var(--text-dim);font-size:16px;letter-spacing:1px;width:100%;text-align:center;}
+  .pipeline-item{background:var(--green-dark);border:1px solid var(--green-dim);color:var(--green);font-family:'Inconsolata',monospace;font-size:16px;padding:6px 12px;display:flex;align-items:center;gap:8px;letter-spacing:1px;animation:slidein .18s ease;}
+  @keyframes slidein{from{opacity:0;transform:translateX(-6px);}to{opacity:1;transform:none;}}
+  .pipeline-arrow{color:var(--text-dim);font-size:18px;line-height:1;}
+  .rm-btn{background:none;border:none;color:var(--text-dim);cursor:pointer;font-family:'Inconsolata',monospace;font-size:14px;line-height:1;padding:0;}
+  .rm-btn:hover{color:var(--red);}
+  .btn{background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:'Inconsolata',monospace;font-size:16px;padding:8px 16px;cursor:pointer;letter-spacing:2px;text-transform:uppercase;transition:all .12s;}
+  .btn:hover{border-color:var(--text-dim);color:var(--text);}
+  .btn-primary{border-color:var(--green);color:var(--green);font-size:16px;padding:11px 28px;letter-spacing:3px;}
+  .btn-primary:hover{background:var(--green-glow);box-shadow:0 0 20px rgba(0,255,65,.15);}
+  .btn-primary:active{transform:scale(.98);}
+  .btn-danger:hover{border-color:var(--red);color:var(--red);}
+  .output-panel{display:none;}
+  .output-panel.visible{display:block;}
+  .hash-step{margin-bottom:14px;animation:fadeup .25s ease;}
+  @keyframes fadeup{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:none;}}
+  .hash-step-label{font-size:15px;letter-spacing:2px;color:var(--text-dim);margin-bottom:5px;}
+  .hash-value{background:rgba(0,0,0,.4);border:1px solid var(--border);padding:10px 12px;word-break:break-all;color:var(--green);font-size:14px;letter-spacing:1px;line-height:1.8;cursor:pointer;transition:border-color .12s;position:relative;}
+  .hash-value:hover{border-color:var(--green-dim);}
+  .copy-hint{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--text-dim);letter-spacing:2px;opacity:0;transition:opacity .15s;pointer-events:none;}
+  .hash-value:hover .copy-hint{opacity:1;}
+  .hash-value.copied{border-color:var(--yellow)!important;}
+  .hash-value.copied .copy-hint{opacity:1;color:var(--yellow);}
+  .final-hash{border-color:var(--green);box-shadow:0 0 14px rgba(0,255,65,.08);font-size:13px;}
+  .profile-row{display:flex;gap:8px;margin-bottom:12px;}
+  .profile-input{flex:1;background:transparent;border:1px solid var(--border);color:var(--text);font-family:'Inconsolata',monospace;font-size:16px;padding:6px 10px;outline:none;letter-spacing:1px;}
+  .profile-input:focus{border-color:var(--green-dim);}
+  .profile-list{display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;}
+  .profile-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);background:rgba(0,0,0,.2);cursor:pointer;transition:all .12s;}
+  .profile-item:hover{border-color:var(--green-dim);background:var(--green-glow);}
+  .profile-name{color:var(--green-dim);font-size:14px;letter-spacing:1px;flex:0 0 auto;min-width:100px;}
+  .profile-pipe{color:var(--text-dim);font-size:15px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .profile-del{background:none;border:none;color:var(--text-dim);cursor:pointer;font-family:'Inconsolata',monospace;font-size:14px;padding:0 4px;flex:0 0 auto;}
+  .profile-del:hover{color:var(--red);}
+  .profiles-empty{color:var(--text-dim);font-size:16px;letter-spacing:1px;text-align:center;padding:16px;}
+  .export-check{display:flex;align-items:center;gap:8px;font-size:16px;color:var(--text-dim);letter-spacing:1px;cursor:pointer;user-select:none;}
+  .export-check input{accent-color:var(--green);width:14px;height:14px;cursor:pointer;}
+  .export-check:hover{color:var(--text);}
+  .notice{background:rgba(0,255,65,.03);border:1px solid rgba(0,255,65,.15);color:var(--green-dim);font-size:16px;padding:10px 14px;letter-spacing:1px;margin-bottom:14px;line-height:1.7;}
+  .notice strong{color:var(--green);}
+  .section-desc{font-size:16px;color:var(--text-dim);margin-bottom:14px;line-height:1.7;letter-spacing:.5px;}
+  footer{margin-top:28px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:15px;color:var(--text-dim);letter-spacing:2px;flex-wrap:wrap;gap:8px;}
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+  .cursor{animation:blink 1s infinite;}
+  ::-webkit-scrollbar{width:4px;}
+  ::-webkit-scrollbar-track{background:var(--bg);}
+  ::-webkit-scrollbar-thumb{background:var(--green-dark);border-radius:2px;}
+  ::-webkit-scrollbar-thumb:hover{background:var(--green-dim);}
+  @media(max-width:580px){.logo{font-size:38px;}.status-bar{margin-left:0;}.algo-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));}}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div>
+      <div class="logo">HASHFORGE<span class="cursor">_</span></div>
+      <div class="logo-sub">ENTROPY PIPELINE GENERATOR // v0.2.0 // WEB CRYPTO API</div>
+    </div>
+    <div class="status-bar">
+      <span><span class="dot"></span>OFFLINE</span>
+      <span id="clock"></span>
+    </div>
+  </header>
+
+  <div class="notice">
+    <strong>✓ 100% OFFLINE</strong> — nenhuma requisição de rede. Todos os algoritmos usam a
+    <strong>Web Crypto API nativa do browser</strong> (implementação Mozilla/Firefox auditada).
+    Zero código criptográfico manual.
+  </div>
+
+  <!-- 01 FRASE -->
+  <div class="panel">
+    <div class="section-label">01 // entrada de frase</div>
+    <input type="text" class="phrase-input" id="phraseInput"
+      placeholder="digite sua frase aqui..."
+      autocomplete="off" spellcheck="false"/>
+    <div class="normalized-preview" id="normPreview">aguardando entrada...</div>
+  </div>
+
+  <!-- 02 ALGORITMOS -->
+  <div class="panel">
+    <div class="section-label">02 // selecione os algoritmos</div>
+    <div class="section-desc">
+      Todos os algoritmos abaixo são nativos da Web Crypto API — implementação auditada pelo Mozilla,
+      integrada ao Tor Browser. Clique para adicionar ao pipeline na ordem desejada.
+    </div>
+    <div class="algo-grid">
+      <button class="algo-btn" data-algo="SHA-256">
+        <span class="algo-family">SHA-2</span>SHA-256
+        <span class="algo-note">256 bits</span>
+      </button>
+      <button class="algo-btn" data-algo="SHA-384">
+        <span class="algo-family">SHA-2</span>SHA-384
+        <span class="algo-note">384 bits</span>
+      </button>
+      <button class="algo-btn" data-algo="SHA-512">
+        <span class="algo-family">SHA-2</span>SHA-512
+        <span class="algo-note">512 bits</span>
+      </button>
+      <button class="algo-btn" data-algo="PBKDF2-SHA256">
+        <span class="algo-family">KDF</span>PBKDF2-SHA256
+        <span class="algo-note">100k iterações</span>
+      </button>
+      <button class="algo-btn" data-algo="PBKDF2-SHA512">
+        <span class="algo-family">KDF</span>PBKDF2-SHA512
+        <span class="algo-note">100k iterações</span>
+      </button>
+      <button class="algo-btn" data-algo="HKDF-SHA256">
+        <span class="algo-family">KDF</span>HKDF-SHA256
+        <span class="algo-note">derivação de chave</span>
+      </button>
+      <button class="algo-btn" data-algo="HKDF-SHA512">
+        <span class="algo-family">KDF</span>HKDF-SHA512
+        <span class="algo-note">derivação de chave</span>
+      </button>
+    </div>
+
+    <div class="sha1-warning">
+      <div class="sha1-warning-label">⚠ ALGORITMO LEGADO — USO RESTRITO</div>
+      <div class="sha1-warning-desc">
+        SHA-1 é criptograficamente quebrado desde 2017 (ataque SHAttered). Use apenas como etapa
+        intermediária no pipeline — <strong>nunca como etapa final</strong>.
+      </div>
+      <div class="algo-grid" style="margin-top:10px;">
+        <button class="algo-btn algo-btn-warn" data-algo="SHA-1">
+          <span class="algo-family">SHA-1 ⚠</span>SHA-1
+          <span class="algo-note">somente etapa intermediária</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 03 PIPELINE -->
+  <div class="panel">
+    <div class="section-label">03 // pipeline</div>
+    <div class="pipeline-area" id="pipelineArea">
+      <span class="pipeline-empty">nenhum algoritmo selecionado — clique nos botões acima para adicionar</span>
+    </div>
+    <div style="margin-top:10px;">
+      <button class="btn btn-danger" onclick="clearPipeline()">limpar pipeline</button>
+    </div>
+  </div>
+
+  <!-- RUN -->
+  <div style="display:flex;gap:16px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
+    <button class="btn btn-primary" onclick="runPipeline()">▶ EXECUTAR PIPELINE</button>
+    <span id="runStatus" style="font-size:16px;color:var(--text-dim);letter-spacing:2px;"></span>
+  </div>
+
+  <!-- 04 OUTPUT -->
+  <div class="panel output-panel" id="outputPanel">
+    <div class="section-label">04 // resultado</div>
+    <div id="hashSteps"></div>
+    <div style="margin-top:14px;margin-bottom:12px;display:flex;gap:20px;flex-wrap:wrap;">
+      <label class="export-check"><input type="checkbox" id="exportPhrase"> incluir frase original</label>
+      <label class="export-check"><input type="checkbox" id="exportNorm"> incluir frase normalizada</label>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn" onclick="exportTxt()">⬇ exportar .txt</button>
+      <button class="btn btn-primary" style="font-size:16px;padding:8px 16px;letter-spacing:2px;" onclick="exportEncrypted()">🔒 exportar .enc (criptografado)</button>
+    </div>
+  </div>
+
+  <!-- 05 PERFIS -->
+  <div class="panel">
+    <div class="section-label">05 // perfis salvos</div>
+    <div class="profile-row">
+      <input type="text" class="profile-input" id="profileName" placeholder="nome do perfil..." spellcheck="false"/>
+      <button class="btn" onclick="saveProfile()">salvar pipeline atual</button>
+    </div>
+    <div class="profile-list" id="profileList"></div>
+  </div>
+
+  <footer>
+    <span>HASHFORGE v0.2.0 // USO PESSOAL</span>
+    <span>WEB CRYPTO API // ZERO DEPENDÊNCIAS</span>
+    <span id="footerClock"></span>
+  </footer>
+</div>
+
+<script>
+'use strict';
+
+// ── STATE ──────────────────────────────────────────────────────────────────────
+let pipeline = [];
+let profiles = [];
+try { profiles = JSON.parse(localStorage.getItem('hf_profiles') || '[]'); } catch(e) {}
+
+// ── CLOCK ──────────────────────────────────────────────────────────────────────
+function tick() {
+  const s = new Date().toISOString().replace('T',' ').substring(0,19) + ' UTC';
+  document.getElementById('clock').textContent = s;
+  document.getElementById('footerClock').textContent = s;
+}
+setInterval(tick, 1000); tick();
+
+// ── PHRASE ─────────────────────────────────────────────────────────────────────
+document.getElementById('phraseInput').addEventListener('input', function() {
+  const norm = this.value.replace(/\s/g,'').toLowerCase();
+  const el = document.getElementById('normPreview');
+  el.innerHTML = this.value
+    ? 'normalizado: <span class="norm-val">' + (norm || '(vazio)') + '</span>'
+    : 'aguardando entrada...';
+});
+
+function getNorm() {
+  return document.getElementById('phraseInput').value.replace(/\s/g,'').toLowerCase();
+}
+
+// ── PIPELINE ───────────────────────────────────────────────────────────────────
+document.querySelectorAll('.algo-btn').forEach(btn => {
+  btn.addEventListener('click', () => { pipeline.push(btn.dataset.algo); renderPipeline(); });
+});
+
+function renderPipeline() {
+  const area = document.getElementById('pipelineArea');
+  area.innerHTML = '';
+  if (!pipeline.length) {
+    area.innerHTML = '<span class="pipeline-empty">nenhum algoritmo selecionado — clique nos botões acima para adicionar</span>';
+    return;
+  }
+  pipeline.forEach((algo, i) => {
+    if (i > 0) {
+      const arr = document.createElement('span');
+      arr.className = 'pipeline-arrow'; arr.textContent = '→';
+      area.appendChild(arr);
+    }
+    const item = document.createElement('div'); item.className = 'pipeline-item';
+    const lbl = document.createElement('span'); lbl.textContent = algo;
+    const rm  = document.createElement('button'); rm.className = 'rm-btn'; rm.textContent = '×'; rm.title = 'remover';
+    rm.addEventListener('click', () => { pipeline.splice(i, 1); renderPipeline(); });
+    item.appendChild(lbl); item.appendChild(rm); area.appendChild(item);
+  });
+}
+
+function clearPipeline() {
+  pipeline = []; renderPipeline();
+  document.getElementById('outputPanel').classList.remove('visible');
+  document.getElementById('runStatus').textContent = '';
+}
+
+// ── HELPERS ────────────────────────────────────────────────────────────────────
+function hexToBytes(hex) {
+  const b = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < hex.length; i += 2) b[i/2] = parseInt(hex.substr(i,2), 16);
+  return b;
+}
+function bytesToHex(b) {
+  return Array.from(b).map(x => x.toString(16).padStart(2,'0')).join('');
+}
+function isHexStr(s) { return /^[0-9a-f]{32,}$/i.test(s) && s.length % 2 === 0; }
+
+// ── HASH ENGINE — 100% Web Crypto API ─────────────────────────────────────────
+async function computeHash(algo, input) {
+  const isHex = isHexStr(input);
+  const data  = isHex ? hexToBytes(input) : new TextEncoder().encode(input);
+
+  switch (algo) {
+    case 'SHA-1':   { const b = await crypto.subtle.digest('SHA-1',   data); return bytesToHex(new Uint8Array(b)); }
+    case 'SHA-256': { const b = await crypto.subtle.digest('SHA-256', data); return bytesToHex(new Uint8Array(b)); }
+    case 'SHA-384': { const b = await crypto.subtle.digest('SHA-384', data); return bytesToHex(new Uint8Array(b)); }
+    case 'SHA-512': { const b = await crypto.subtle.digest('SHA-512', data); return bytesToHex(new Uint8Array(b)); }
+
+    case 'PBKDF2-SHA256':
+    case 'PBKDF2-SHA512': {
+      const hash = algo === 'PBKDF2-SHA256' ? 'SHA-256' : 'SHA-512';
+      const km   = await crypto.subtle.importKey('raw', data, { name: 'PBKDF2' }, false, ['deriveBits']);
+      const salt = new TextEncoder().encode('hashforge-v2');
+      const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 100000, hash }, km, 256);
+      return bytesToHex(new Uint8Array(bits));
+    }
+
+    case 'HKDF-SHA256':
+    case 'HKDF-SHA512': {
+      const hash = algo === 'HKDF-SHA256' ? 'SHA-256' : 'SHA-512';
+      const km   = await crypto.subtle.importKey('raw', data, { name: 'HKDF' }, false, ['deriveBits']);
+      const salt = new TextEncoder().encode('hashforge-v2');
+      const info = new TextEncoder().encode('hashforge-hkdf');
+      const bits = await crypto.subtle.deriveBits({ name: 'HKDF', hash, salt, info }, km, 256);
+      return bytesToHex(new Uint8Array(bits));
+    }
+
+    default: throw new Error('algoritmo desconhecido: ' + algo);
+  }
+}
+
+// ── RUN ────────────────────────────────────────────────────────────────────────
+async function runPipeline() {
+  const phrase = getNorm();
+  const status = document.getElementById('runStatus');
+  if (!phrase)          { status.textContent = '⚠ insira uma frase'; return; }
+  if (!pipeline.length) { status.textContent = '⚠ pipeline vazio';   return; }
+
+  status.textContent = 'processando...';
+  const stepsEl = document.getElementById('hashSteps');
+  stepsEl.innerHTML = '';
+  document.getElementById('outputPanel').classList.add('visible');
+
+  let current = phrase;
+  for (let i = 0; i < pipeline.length; i++) {
+    const algo    = pipeline[i];
+    const isFinal = i === pipeline.length - 1;
+    let result;
+    try {
+      result = await computeHash(algo, current);
+    } catch(e) {
+      appendStep(stepsEl, i+1, algo, 'ERRO: ' + e.message, true, false);
+      status.textContent = '✗ erro no pipeline'; return;
+    }
+    appendStep(stepsEl, i+1, algo, result, false, isFinal);
+    current = result;
+  }
+  status.textContent = '✓ concluído';
+  setTimeout(() => status.textContent = '', 3000);
+}
+
+function appendStep(container, num, algo, value, isError, isFinal) {
+  const div = document.createElement('div'); div.className = 'hash-step';
+  const lbl = document.createElement('div'); lbl.className = 'hash-step-label';
+  lbl.textContent = `STEP ${num} // ${algo}${isFinal ? ' // RESULTADO FINAL' : ''}`;
+  const val = document.createElement('div');
+  val.className = 'hash-value' + (isFinal ? ' final-hash' : '');
+  if (isError) {
+    val.style.color = 'var(--red)'; val.textContent = value;
+  } else {
+    val.textContent = value;
+    const hint = document.createElement('span'); hint.className = 'copy-hint'; hint.textContent = '[ clique para copiar ]';
+    val.appendChild(hint);
+    val.addEventListener('click', () => {
+      navigator.clipboard.writeText(value).then(() => {
+        val.classList.add('copied'); hint.textContent = '[ copiado! ]';
+        setTimeout(() => { val.classList.remove('copied'); hint.textContent = '[ clique para copiar ]'; }, 2000);
+      }).catch(() => { hint.textContent = '[ erro ao copiar ]'; });
+    });
+  }
+  div.appendChild(lbl); div.appendChild(val); container.appendChild(div);
+}
+
+// ── PROFILES ───────────────────────────────────────────────────────────────────
+function saveProfiles() { try { localStorage.setItem('hf_profiles', JSON.stringify(profiles)); } catch(e) {} }
+
+function saveProfile() {
+  const name = document.getElementById('profileName').value.trim();
+  if (!name)            { alert('dê um nome ao perfil'); return; }
+  if (!pipeline.length) { alert('pipeline está vazio');  return; }
+  profiles.push({ name, pipeline: [...pipeline] });
+  saveProfiles(); renderProfiles();
+  document.getElementById('profileName').value = '';
+}
+
+function loadProfile(i)      { pipeline = [...profiles[i].pipeline]; renderPipeline(); }
+function deleteProfile(i, e) { e.stopPropagation(); profiles.splice(i, 1); saveProfiles(); renderProfiles(); }
+
+// ── BUILD TXT CONTENT ──────────────────────────────────────────────────────────
+function buildTxtContent() {
+  const steps = document.querySelectorAll('.hash-step');
+  if (!steps.length) return null;
+  const now           = new Date().toISOString().replace('T',' ').substring(0,19) + ' UTC';
+  const savePhrase    = document.getElementById('exportPhrase').checked;
+  const saveNorm      = document.getElementById('exportNorm').checked;
+  const lines = [];
+  lines.push('════════════════════════════════════════════════════════════');
+  lines.push('  HASHFORGE — RESULTADO DO PIPELINE');
+  lines.push('════════════════════════════════════════════════════════════');
+  lines.push('');
+  lines.push('  Data/hora : ' + now);
+  if (savePhrase) lines.push('  Frase     : ' + document.getElementById('phraseInput').value);
+  if (saveNorm)   lines.push('  Norm.     : ' + getNorm());
+  lines.push('  Pipeline  : ' + pipeline.join(' → '));
+  lines.push('');
+  lines.push('────────────────────────────────────────────────────────────');
+  lines.push('');
+  steps.forEach(step => {
+    const label = step.querySelector('.hash-step-label').textContent.trim();
+    const valEl = step.querySelector('.hash-value');
+    const value = Array.from(valEl.childNodes)
+      .filter(n => n.nodeType === Node.TEXT_NODE)
+      .map(n => n.textContent.trim()).join('');
+    lines.push('  ' + label);
+    lines.push('  ' + value);
+    lines.push('');
+  });
+  lines.push('────────────────────────────────────────────────────────────');
+  lines.push('  HashForge // 100% offline // Web Crypto API');
+  lines.push('════════════════════════════════════════════════════════════');
+  return lines.join('\n');
+}
+
+// ── EXPORT TXT (plain) ─────────────────────────────────────────────────────────
+function exportTxt() {
+  const content = buildTxtContent();
+  if (!content) return;
+  triggerDownload(
+    new Blob([content], { type: 'text/plain;charset=utf-8' }),
+    'hashforge-' + new Date().toISOString().substring(0,10) + '.txt'
+  );
+}
+
+// ── EXPORT ENCRYPTED (.enc — OpenSSL AES-256-CBC + PBKDF2 compatible) ─────────
+function exportEncrypted() {
+  const content = buildTxtContent();
+  if (!content) { alert('Execute o pipeline primeiro.'); return; }
+  showPasswordModal(async (password) => {
+    if (!password) return;
+    try {
+      // OpenSSL format: "Salted__" + 8-byte salt + ciphertext
+      const salt       = crypto.getRandomValues(new Uint8Array(8));
+      const passBytes  = new TextEncoder().encode(password);
+
+      // Derive key+IV from password+salt using PBKDF2 (OpenSSL -pbkdf2 flag)
+      // OpenSSL derives 48 bytes: first 32 = key, last 16 = IV
+      const keyMaterial = await crypto.subtle.importKey('raw', passBytes, { name: 'PBKDF2' }, false, ['deriveBits']);
+      const derived     = await crypto.subtle.deriveBits(
+        { name: 'PBKDF2', salt, iterations: 10000, hash: 'SHA-256' },
+        keyMaterial, 384 // 48 bytes = 384 bits
+      );
+      const derivedBytes = new Uint8Array(derived);
+      const keyBytes     = derivedBytes.slice(0, 32);
+      const iv           = derivedBytes.slice(32, 48);
+
+      // Import AES-CBC key
+      const aesKey = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-CBC' }, false, ['encrypt']);
+
+      // Encrypt
+      const plaintext   = new TextEncoder().encode(content);
+      const ciphertext  = await crypto.subtle.encrypt({ name: 'AES-CBC', iv }, aesKey, plaintext);
+
+      // Assemble: "Salted__" (8 bytes) + salt (8 bytes) + ciphertext
+      const magic  = new TextEncoder().encode('Salted__');
+      const output = new Uint8Array(8 + 8 + ciphertext.byteLength);
+      output.set(magic, 0);
+      output.set(salt,  8);
+      output.set(new Uint8Array(ciphertext), 16);
+
+      triggerDownload(
+        new Blob([output], { type: 'application/octet-stream' }),
+        'hashforge-' + new Date().toISOString().substring(0,10) + '.enc'
+      );
+    } catch(e) {
+      alert('Erro ao criptografar: ' + e.message);
+    }
+  });
+}
+
+// ── PASSWORD MODAL ─────────────────────────────────────────────────────────────
+function showPasswordModal(callback) {
+  // Remove existing modal if any
+  document.getElementById('hf-modal')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'hf-modal';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:10000;display:flex;align-items:center;justify-content:center;';
+
+  overlay.innerHTML = `
+    <div style="background:var(--bg2);border:1px solid var(--border);padding:28px;min-width:340px;max-width:90vw;position:relative;">
+      <div style="position:absolute;top:0;left:0;width:2px;height:100%;background:linear-gradient(to bottom,var(--green),transparent);opacity:.6;"></div>
+      <div style="font-size:15px;letter-spacing:2px;color:var(--text-dim);margin-bottom:16px;text-transform:uppercase;">criptografar arquivo</div>
+      <div style="font-size:15px;color:var(--text-dim);margin-bottom:16px;line-height:1.7;letter-spacing:.5px;">
+        O arquivo será criptografado com <strong style="color:var(--green);">AES-256-CBC</strong> compatível com OpenSSL.<br>
+        Para descriptografar em qualquer Linux:<br>
+        <span style="color:var(--green-dim);font-size:14px;letter-spacing:1px;">openssl enc -d -aes-256-cbc -pbkdf2 -in arquivo.enc -out resultado.txt</span>
+      </div>
+      <input id="hf-pwd" type="password"
+        style="width:100%;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--green);font-family:'Inconsolata',monospace;font-size:16px;padding:8px 0;outline:none;caret-color:var(--green);letter-spacing:2px;margin-bottom:8px;"
+        placeholder="digite a senha..." autocomplete="off"/>
+      <input id="hf-pwd2" type="password"
+        style="width:100%;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--green);font-family:'Inconsolata',monospace;font-size:16px;padding:8px 0;outline:none;caret-color:var(--green);letter-spacing:2px;margin-bottom:20px;"
+        placeholder="confirme a senha..." autocomplete="off"/>
+      <div id="hf-pwd-err" style="font-size:15px;color:var(--red);min-height:16px;margin-bottom:12px;letter-spacing:1px;"></div>
+      <div style="display:flex;gap:10px;">
+        <button id="hf-confirm" style="background:transparent;border:1px solid var(--green);color:var(--green);font-family:'Inconsolata',monospace;font-size:11px;padding:8px 20px;cursor:pointer;letter-spacing:2px;text-transform:uppercase;transition:all .12s;">confirmar</button>
+        <button id="hf-cancel"  style="background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:'Inconsolata',monospace;font-size:11px;padding:8px 20px;cursor:pointer;letter-spacing:2px;text-transform:uppercase;transition:all .12s;">cancelar</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  document.getElementById('hf-pwd').focus();
+
+  document.getElementById('hf-cancel').onclick = () => { overlay.remove(); callback(null); };
+  overlay.onclick = (e) => { if (e.target === overlay) { overlay.remove(); callback(null); } };
+
+  document.getElementById('hf-confirm').onclick = () => {
+    const p1 = document.getElementById('hf-pwd').value;
+    const p2 = document.getElementById('hf-pwd2').value;
+    const err = document.getElementById('hf-pwd-err');
+    if (!p1)       { err.textContent = '⚠ senha não pode ser vazia'; return; }
+    if (p1 !== p2) { err.textContent = '⚠ senhas não coincidem';    return; }
+    overlay.remove();
+    callback(p1);
+  };
+
+  // Enter key confirms
+  [document.getElementById('hf-pwd'), document.getElementById('hf-pwd2')].forEach(el => {
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('hf-confirm').click(); });
+  });
+}
+
+// ── DOWNLOAD HELPER ────────────────────────────────────────────────────────────
+function triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── INIT ───────────────────────────────────────────────────────────────────────
+renderProfiles();
+
+function renderProfiles() {
+  const list = document.getElementById('profileList');
+  if (!profiles.length) { list.innerHTML = '<div class="profiles-empty">nenhum perfil salvo</div>'; return; }
+  list.innerHTML = '';
+  profiles.forEach((p, i) => {
+    const item = document.createElement('div'); item.className = 'profile-item';
+    item.innerHTML = `<span class="profile-name">${p.name}</span><span class="profile-pipe">${p.pipeline.join(' → ')}</span><button class="profile-del" title="excluir">×</button>`;
+    item.querySelector('.profile-del').addEventListener('click', e => deleteProfile(i, e));
+    item.addEventListener('click', () => loadProfile(i));
+    list.appendChild(item);
+  });
+}
+</script>
+</body>
+</html>
