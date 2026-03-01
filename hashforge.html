@@ -82,6 +82,10 @@
   .profile-del{background:none;border:none;color:var(--text-dim);cursor:pointer;font-family:'Inconsolata',monospace;font-size:14px;padding:0 4px;flex:0 0 auto;}
   .profile-del:hover{color:var(--red);}
   .profiles-empty{color:var(--text-dim);font-size:16px;letter-spacing:1px;text-align:center;padding:16px;}
+  .salt-panel{border-color:rgba(0,204,53,.4);}
+  .salt-info{font-size:14px;color:var(--text-dim);line-height:1.8;margin-bottom:14px;padding:12px 14px;border:1px solid rgba(0,204,53,.2);background:rgba(0,204,53,.04);}
+  .salt-info strong{color:var(--green);}
+  .salt-info code{color:var(--green-dim);font-family:'Inconsolata',monospace;font-size:13px;background:rgba(0,0,0,.3);padding:2px 6px;}
   .export-check{display:flex;align-items:center;gap:8px;font-size:16px;color:var(--text-dim);letter-spacing:1px;cursor:pointer;user-select:none;}
   .export-check input{accent-color:var(--green);width:14px;height:14px;cursor:pointer;}
   .export-check:hover{color:var(--text);}
@@ -106,7 +110,7 @@
   <header>
     <div>
       <div class="logo">HASHFORGE<span class="cursor">_</span></div>
-      <div class="logo-sub">ENTROPY PIPELINE GENERATOR // v0.2.0 // WEB CRYPTO API</div>
+      <div class="logo-sub">ENTROPY PIPELINE GENERATOR // v0.3.0 // WEB CRYPTO API</div>
     </div>
     <div class="status-bar">
       <span><span class="dot"></span>OFFLINE</span>
@@ -193,6 +197,16 @@
     </div>
   </div>
 
+
+  <!-- 03b SALT -->
+  <div class="panel salt-panel" id="saltPanel" style="display:none;">
+    <div class="section-label" data-i18n="s03b">03b // salt pessoal</div>
+    <div class="salt-info" id="saltInfo"></div>
+    <input type="text" class="phrase-input" id="saltInput"
+      autocomplete="off" spellcheck="false" value="hashforge-v2"/>
+    <div class="normalized-preview" id="saltPreview"></div>
+  </div>
+
   <!-- RUN -->
   <div style="display:flex;gap:16px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
     <button class="btn btn-primary" onclick="runPipeline()" data-i18n="runBtn">▶ EXECUTAR PIPELINE</button>
@@ -224,7 +238,7 @@
   </div>
 
   <footer>
-    <span data-i18n="footer1">HASHFORGE v0.2.0 // USO PESSOAL</span>
+    <span data-i18n="footer1">HASHFORGE v0.3.0 // USO PESSOAL</span>
     <span data-i18n="footer2">WEB CRYPTO API // ZERO DEPENDÊNCIAS</span>
     <span id="footerClock"></span>
   </footer>
@@ -271,6 +285,7 @@ function renderPipeline() {
     area.innerHTML = '<span class="pipeline-empty">' + LANGS[currentLang].pipelineEmpty + '</span>';
     return;
   }
+  updateSaltPanel();
   pipeline.forEach((algo, i) => {
     if (i > 0) {
       const arr = document.createElement('span');
@@ -286,7 +301,7 @@ function renderPipeline() {
 }
 
 function clearPipeline() {
-  pipeline = []; renderPipeline();
+  pipeline = []; renderPipeline(); updateSaltPanel();
   document.getElementById('outputPanel').classList.remove('visible');
   document.getElementById('runStatus').textContent = '';
 }
@@ -301,6 +316,56 @@ function bytesToHex(b) {
   return Array.from(b).map(x => x.toString(16).padStart(2,'0')).join('');
 }
 function isHexStr(s) { return /^[0-9a-f]{32,}$/i.test(s) && s.length % 2 === 0; }
+
+
+// ── SALT ───────────────────────────────────────────────────────────────────────
+const KDF_ALGOS = ['PBKDF2-SHA256', 'PBKDF2-SHA512', 'HKDF-SHA256', 'HKDF-SHA512'];
+
+function getKdfsInPipeline() {
+  return pipeline.filter(a => KDF_ALGOS.includes(a));
+}
+
+function updateSaltPanel() {
+  const kdfs = getKdfsInPipeline();
+  const panel = document.getElementById('saltPanel');
+  const saltInput = document.getElementById('saltInput');
+  const saltPreview = document.getElementById('saltPreview');
+  const saltInfo = document.getElementById('saltInfo');
+  const t = LANGS[currentLang];
+
+  if (kdfs.length === 0) {
+    panel.style.display = 'none';
+    return;
+  }
+
+  panel.style.display = 'block';
+
+  // Update section label
+  panel.querySelector('.section-label').textContent = t.s03b;
+
+  // Update info text with algorithm names
+  saltInfo.innerHTML = t.saltInfo.replace('{algos}', kdfs.join(', '));
+
+  // Update placeholder
+  saltInput.placeholder = t.saltPh;
+
+  // Update preview
+  const val = saltInput.value.trim();
+  if (!val) {
+    saltPreview.innerHTML = '<span style="color:var(--yellow)">' + t.saltWarning + '</span>';
+  } else if (val === 'hashforge-v2') {
+    saltPreview.innerHTML = t.saltPreview + '<span class="norm-val">' + val + '</span> <span style="color:var(--yellow);font-size:13px;">(' + t.saltDefault + ')</span>';
+  } else {
+    saltPreview.innerHTML = t.saltPreview + '<span class="norm-val">' + val + '</span> <span style="color:var(--green);font-size:13px;">(' + t.saltCustom + ')</span>';
+  }
+}
+
+document.getElementById('saltInput').addEventListener('input', updateSaltPanel);
+
+function getSalt() {
+  const val = document.getElementById('saltInput').value.trim();
+  return val || 'hashforge-v2';
+}
 
 // ── HASH ENGINE — 100% Web Crypto API ─────────────────────────────────────────
 async function computeHash(algo, input) {
@@ -317,7 +382,7 @@ async function computeHash(algo, input) {
     case 'PBKDF2-SHA512': {
       const hash = algo === 'PBKDF2-SHA256' ? 'SHA-256' : 'SHA-512';
       const km   = await crypto.subtle.importKey('raw', data, { name: 'PBKDF2' }, false, ['deriveBits']);
-      const salt = new TextEncoder().encode('hashforge-v2');
+      const salt = new TextEncoder().encode(getSalt());
       const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt, iterations: 100000, hash }, km, 256);
       return bytesToHex(new Uint8Array(bits));
     }
@@ -326,7 +391,7 @@ async function computeHash(algo, input) {
     case 'HKDF-SHA512': {
       const hash = algo === 'HKDF-SHA256' ? 'SHA-256' : 'SHA-512';
       const km   = await crypto.subtle.importKey('raw', data, { name: 'HKDF' }, false, ['deriveBits']);
-      const salt = new TextEncoder().encode('hashforge-v2');
+      const salt = new TextEncoder().encode(getSalt());
       const info = new TextEncoder().encode('hashforge-hkdf');
       const bits = await crypto.subtle.deriveBits({ name: 'HKDF', hash, salt, info }, km, 256);
       return bytesToHex(new Uint8Array(bits));
@@ -419,6 +484,8 @@ function buildTxtContent() {
   lines.push(LANGS[currentLang].txtDate + now);
   if (savePhrase) lines.push(LANGS[currentLang].txtPhrase + document.getElementById('phraseInput').value);
   if (saveNorm)   lines.push(LANGS[currentLang].txtNorm + getNorm());
+  const kdfList = getKdfsInPipeline();
+  if (kdfList.length > 0) lines.push(LANGS[currentLang].txtSalt + getSalt());
   lines.push(LANGS[currentLang].txtPipeline + pipeline.join(' → '));
   lines.push('');
   lines.push('────────────────────────────────────────────────────────────');
@@ -564,6 +631,20 @@ const LANGS = {
     s02:          '02 // selecione os algoritmos',
     algoDesc:     'Todos os algoritmos abaixo são nativos da Web Crypto API — implementação auditada pelo Mozilla, integrada ao Tor Browser. Clique para adicionar ao pipeline na ordem desejada.',
     s03:          '03 // pipeline',
+    s03b:         '03b // salt pessoal',
+    saltInfo:     `O <strong>salt</strong> é um valor extra que entra no cálculo do <strong>{algos}</strong>.<br><br>
+— Pense nele como um <strong>segundo segredo</strong>, separado da sua frase.<br>
+— Duas pessoas com a mesma frase e mesmo pipeline, mas <strong>salts diferentes</strong>, geram hashes completamente diferentes.<br>
+— O salt <strong>não precisa ser secreto</strong>, mas precisa ser <strong>sempre o mesmo</strong> para reproduzir o resultado.<br>
+— Exemplos: <code>meu-projeto</code>, <code>hashforge-pessoal</code>, seu nome de usuário.`,
+    saltPh:       'digite seu salt pessoal...',
+    saltPreview:  'salt: ',
+    saltEmpty:    '(vazio — usando padrão)',
+    saltWarning:  '⚠ salt vazio — usando salt padrão (hashforge-v2)',
+    saltDefault:  'padrão — recomendamos personalizar',
+    saltCustom:   'salt personalizado ✓',
+    alertSalt:    'Defina um salt pessoal para usar ',
+
     s04:          '04 // resultado',
     s05:          '05 // perfis salvos',
     iter:         '100k iterações',
@@ -579,7 +660,7 @@ const LANGS = {
     exportTxt:    '⬇ exportar .txt',
     exportEnc:    '🔒 exportar .enc (criptografado)',
     saveProfile:  'salvar pipeline atual',
-    footer1:      'HASHFORGE v0.2.0 // USO PESSOAL',
+    footer1:      'HASHFORGE v0.3.0 // USO PESSOAL',
     footer2:      'WEB CRYPTO API // ZERO DEPENDÊNCIAS',
     profileNamePh:'nome do perfil...',
     phrasePh:     'digite sua frase aqui...',
@@ -612,6 +693,7 @@ const LANGS = {
     encAlertErr:     'Erro ao criptografar: ',
     encAlertRun:     'Execute o pipeline primeiro.',
     txtHeader:       'HASHFORGE — RESULTADO DO PIPELINE',
+    txtSalt:         '  Salt      : ',
     txtDate:         '  Data/hora : ',
     txtPhrase:       '  Frase     : ',
     txtNorm:         '  Norm.     : ',
@@ -624,6 +706,20 @@ const LANGS = {
     s02:          '02 // select algorithms',
     algoDesc:     'All algorithms below are native to the Web Crypto API — audited Mozilla implementation, built into Tor Browser. Click to add to the pipeline in the desired order.',
     s03:          '03 // pipeline',
+    s03b:         '03b // personal salt',
+    saltInfo:     `The <strong>salt</strong> is an extra value that feeds into the <strong>{algos}</strong> calculation.<br><br>
+— Think of it as a <strong>second secret</strong>, separate from your phrase.<br>
+— Two people with the same phrase and pipeline, but <strong>different salts</strong>, generate completely different hashes.<br>
+— The salt <strong>does not need to be secret</strong>, but must <strong>always be the same</strong> to reproduce the result.<br>
+— Examples: <code>my-project</code>, <code>hashforge-personal</code>, your username.`,
+    saltPh:       'enter your personal salt...',
+    saltPreview:  'salt: ',
+    saltEmpty:    '(empty — using default)',
+    saltWarning:  '⚠ empty salt — using default salt (hashforge-v2)',
+    saltDefault:  'default — we recommend personalizing',
+    saltCustom:   'custom salt ✓',
+    alertSalt:    'Set a personal salt to use ',
+
     s04:          '04 // result',
     s05:          '05 // saved profiles',
     iter:         '100k iterations',
@@ -639,7 +735,7 @@ const LANGS = {
     exportTxt:    '⬇ export .txt',
     exportEnc:    '🔒 export .enc (encrypted)',
     saveProfile:  'save current pipeline',
-    footer1:      'HASHFORGE v0.2.0 // PERSONAL USE',
+    footer1:      'HASHFORGE v0.3.0 // PERSONAL USE',
     footer2:      'WEB CRYPTO API // ZERO DEPENDENCIES',
     profileNamePh:'profile name...',
     phrasePh:     'type your phrase here...',
@@ -672,6 +768,7 @@ const LANGS = {
     encAlertErr:     'Encryption error: ',
     encAlertRun:     'Run the pipeline first.',
     txtHeader:       'HASHFORGE — PIPELINE RESULT',
+    txtSalt:         '  Salt      : ',
     txtDate:         '  Date/time : ',
     txtPhrase:       '  Phrase    : ',
     txtNorm:         '  Norm.     : ',
@@ -711,6 +808,7 @@ function setLang(lang) {
   // Re-render pipeline (for remove button titles)
   renderPipeline();
   renderProfiles();
+  updateSaltPanel();
 }
 
 // Override functions that use text to be lang-aware
