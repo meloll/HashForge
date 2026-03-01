@@ -89,6 +89,8 @@
   .notice strong{color:var(--green);}
   .section-desc{font-size:16px;color:var(--text-dim);margin-bottom:14px;line-height:1.7;letter-spacing:.5px;}
   footer{margin-top:28px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:15px;color:var(--text-dim);letter-spacing:2px;flex-wrap:wrap;gap:8px;}
+  .lang-btn{background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:'Inconsolata',monospace;font-size:13px;padding:4px 10px;cursor:pointer;letter-spacing:2px;text-transform:uppercase;transition:all .12s;}
+  .lang-btn:hover,.lang-btn.active{border-color:var(--green);color:var(--green);}
   @keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
   .cursor{animation:blink 1s infinite;}
   ::-webkit-scrollbar{width:4px;}
@@ -109,18 +111,20 @@
     <div class="status-bar">
       <span><span class="dot"></span>OFFLINE</span>
       <span id="clock"></span>
+      <span>
+        <button class="lang-btn active" id="btn-pt" onclick="setLang('pt')">PT</button>
+        <button class="lang-btn" id="btn-en" onclick="setLang('en')">EN</button>
+      </span>
     </div>
   </header>
 
   <div class="notice">
-    <strong>✓ 100% OFFLINE</strong> — nenhuma requisição de rede. Todos os algoritmos usam a
-    <strong>Web Crypto API nativa do browser</strong> (implementação Mozilla/Firefox auditada).
-    Zero código criptográfico manual.
+    <strong>✓ 100% OFFLINE</strong> — <span data-i18n="notice"></span>
   </div>
 
   <!-- 01 FRASE -->
   <div class="panel">
-    <div class="section-label">01 // entrada de frase</div>
+    <div class="section-label" data-i18n="s01">01 // entrada de frase</div>
     <input type="text" class="phrase-input" id="phraseInput"
       placeholder="digite sua frase aqui..."
       autocomplete="off" spellcheck="false"/>
@@ -129,10 +133,9 @@
 
   <!-- 02 ALGORITMOS -->
   <div class="panel">
-    <div class="section-label">02 // selecione os algoritmos</div>
+    <div class="section-label" data-i18n="s02">02 // selecione os algoritmos</div>
     <div class="section-desc">
-      Todos os algoritmos abaixo são nativos da Web Crypto API — implementação auditada pelo Mozilla,
-      integrada ao Tor Browser. Clique para adicionar ao pipeline na ordem desejada.
+      <span data-i18n="algoDesc"></span>
     </div>
     <div class="algo-grid">
       <button class="algo-btn" data-algo="SHA-256">
@@ -149,32 +152,31 @@
       </button>
       <button class="algo-btn" data-algo="PBKDF2-SHA256">
         <span class="algo-family">KDF</span>PBKDF2-SHA256
-        <span class="algo-note">100k iterações</span>
+        <span class="algo-note" data-i18n="iter">100k iterações</span>
       </button>
       <button class="algo-btn" data-algo="PBKDF2-SHA512">
         <span class="algo-family">KDF</span>PBKDF2-SHA512
-        <span class="algo-note">100k iterações</span>
+        <span class="algo-note" data-i18n="iter">100k iterações</span>
       </button>
       <button class="algo-btn" data-algo="HKDF-SHA256">
         <span class="algo-family">KDF</span>HKDF-SHA256
-        <span class="algo-note">derivação de chave</span>
+        <span class="algo-note" data-i18n="keyDeriv">derivação de chave</span>
       </button>
       <button class="algo-btn" data-algo="HKDF-SHA512">
         <span class="algo-family">KDF</span>HKDF-SHA512
-        <span class="algo-note">derivação de chave</span>
+        <span class="algo-note" data-i18n="keyDeriv">derivação de chave</span>
       </button>
     </div>
 
     <div class="sha1-warning">
-      <div class="sha1-warning-label">⚠ ALGORITMO LEGADO — USO RESTRITO</div>
+      <div class="sha1-warning-label" data-i18n="sha1Label">⚠ ALGORITMO LEGADO — USO RESTRITO</div>
       <div class="sha1-warning-desc">
-        SHA-1 é criptograficamente quebrado desde 2017 (ataque SHAttered). Use apenas como etapa
-        intermediária no pipeline — <strong>nunca como etapa final</strong>.
+        <span data-i18n="sha1Desc"></span>
       </div>
       <div class="algo-grid" style="margin-top:10px;">
         <button class="algo-btn algo-btn-warn" data-algo="SHA-1">
           <span class="algo-family">SHA-1 ⚠</span>SHA-1
-          <span class="algo-note">somente etapa intermediária</span>
+          <span class="algo-note" data-i18n="sha1Note">somente etapa intermediária</span>
         </button>
       </div>
     </div>
@@ -182,48 +184,48 @@
 
   <!-- 03 PIPELINE -->
   <div class="panel">
-    <div class="section-label">03 // pipeline</div>
+    <div class="section-label" data-i18n="s03">03 // pipeline</div>
     <div class="pipeline-area" id="pipelineArea">
-      <span class="pipeline-empty">nenhum algoritmo selecionado — clique nos botões acima para adicionar</span>
+      <span class="pipeline-empty" data-i18n="pipelineEmpty">nenhum algoritmo selecionado — clique nos botões acima para adicionar</span>
     </div>
     <div style="margin-top:10px;">
-      <button class="btn btn-danger" onclick="clearPipeline()">limpar pipeline</button>
+      <button class="btn btn-danger" onclick="clearPipeline()" data-i18n="clearBtn">limpar pipeline</button>
     </div>
   </div>
 
   <!-- RUN -->
   <div style="display:flex;gap:16px;align-items:center;margin-bottom:14px;flex-wrap:wrap;">
-    <button class="btn btn-primary" onclick="runPipeline()">▶ EXECUTAR PIPELINE</button>
+    <button class="btn btn-primary" onclick="runPipeline()" data-i18n="runBtn">▶ EXECUTAR PIPELINE</button>
     <span id="runStatus" style="font-size:16px;color:var(--text-dim);letter-spacing:2px;"></span>
   </div>
 
   <!-- 04 OUTPUT -->
   <div class="panel output-panel" id="outputPanel">
-    <div class="section-label">04 // resultado</div>
+    <div class="section-label" data-i18n="s04">04 // resultado</div>
     <div id="hashSteps"></div>
     <div style="margin-top:14px;margin-bottom:12px;display:flex;gap:20px;flex-wrap:wrap;">
-      <label class="export-check"><input type="checkbox" id="exportPhrase"> incluir frase original</label>
-      <label class="export-check"><input type="checkbox" id="exportNorm"> incluir frase normalizada</label>
+      <label class="export-check"><input type="checkbox" id="exportPhrase"> <span data-i18n="exportPhrase">incluir frase original</span></label>
+      <label class="export-check"><input type="checkbox" id="exportNorm"> <span data-i18n="exportNorm">incluir frase normalizada</span></label>
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn" onclick="exportTxt()">⬇ exportar .txt</button>
-      <button class="btn btn-primary" style="font-size:16px;padding:8px 16px;letter-spacing:2px;" onclick="exportEncrypted()">🔒 exportar .enc (criptografado)</button>
+      <button class="btn" onclick="exportTxt()" data-i18n="exportTxt">⬇ exportar .txt</button>
+      <button class="btn btn-primary" style="font-size:16px;padding:8px 16px;letter-spacing:2px;" onclick="exportEncrypted()" data-i18n="exportEnc">🔒 exportar .enc (criptografado)</button>
     </div>
   </div>
 
   <!-- 05 PERFIS -->
   <div class="panel">
-    <div class="section-label">05 // perfis salvos</div>
+    <div class="section-label" data-i18n="s05">05 // perfis salvos</div>
     <div class="profile-row">
-      <input type="text" class="profile-input" id="profileName" placeholder="nome do perfil..." spellcheck="false"/>
-      <button class="btn" onclick="saveProfile()">salvar pipeline atual</button>
+      <input type="text" class="profile-input" id="profileName" spellcheck="false"/>
+      <button class="btn" onclick="saveProfile()" data-i18n="saveProfile">salvar pipeline atual</button>
     </div>
     <div class="profile-list" id="profileList"></div>
   </div>
 
   <footer>
-    <span>HASHFORGE v0.2.0 // USO PESSOAL</span>
-    <span>WEB CRYPTO API // ZERO DEPENDÊNCIAS</span>
+    <span data-i18n="footer1">HASHFORGE v0.2.0 // USO PESSOAL</span>
+    <span data-i18n="footer2">WEB CRYPTO API // ZERO DEPENDÊNCIAS</span>
     <span id="footerClock"></span>
   </footer>
 </div>
@@ -249,8 +251,8 @@ document.getElementById('phraseInput').addEventListener('input', function() {
   const norm = this.value.replace(/\s/g,'').toLowerCase();
   const el = document.getElementById('normPreview');
   el.innerHTML = this.value
-    ? 'normalizado: <span class="norm-val">' + (norm || '(vazio)') + '</span>'
-    : 'aguardando entrada...';
+    ? LANGS[currentLang].normLabel + '<span class="norm-val">' + (norm || LANGS[currentLang].normEmpty) + '</span>'
+    : LANGS[currentLang].normWaiting;
 });
 
 function getNorm() {
@@ -266,7 +268,7 @@ function renderPipeline() {
   const area = document.getElementById('pipelineArea');
   area.innerHTML = '';
   if (!pipeline.length) {
-    area.innerHTML = '<span class="pipeline-empty">nenhum algoritmo selecionado — clique nos botões acima para adicionar</span>';
+    area.innerHTML = '<span class="pipeline-empty">' + LANGS[currentLang].pipelineEmpty + '</span>';
     return;
   }
   pipeline.forEach((algo, i) => {
@@ -277,7 +279,7 @@ function renderPipeline() {
     }
     const item = document.createElement('div'); item.className = 'pipeline-item';
     const lbl = document.createElement('span'); lbl.textContent = algo;
-    const rm  = document.createElement('button'); rm.className = 'rm-btn'; rm.textContent = '×'; rm.title = 'remover';
+    const rm  = document.createElement('button'); rm.className = 'rm-btn'; rm.textContent = '×'; rm.title = LANGS[currentLang].pipelineRmTitle;
     rm.addEventListener('click', () => { pipeline.splice(i, 1); renderPipeline(); });
     item.appendChild(lbl); item.appendChild(rm); area.appendChild(item);
   });
@@ -330,7 +332,7 @@ async function computeHash(algo, input) {
       return bytesToHex(new Uint8Array(bits));
     }
 
-    default: throw new Error('algoritmo desconhecido: ' + algo);
+    default: throw new Error(LANGS[currentLang].algoUnknown + algo);
   }
 }
 
@@ -338,10 +340,10 @@ async function computeHash(algo, input) {
 async function runPipeline() {
   const phrase = getNorm();
   const status = document.getElementById('runStatus');
-  if (!phrase)          { status.textContent = '⚠ insira uma frase'; return; }
-  if (!pipeline.length) { status.textContent = '⚠ pipeline vazio';   return; }
+  if (!phrase)          { status.textContent = LANGS[currentLang].runErrPhrase; return; }
+  if (!pipeline.length) { status.textContent = LANGS[currentLang].runErrPipeline; return; }
 
-  status.textContent = 'processando...';
+  status.textContent = LANGS[currentLang].runProcessing;
   const stepsEl = document.getElementById('hashSteps');
   stepsEl.innerHTML = '';
   document.getElementById('outputPanel').classList.add('visible');
@@ -355,32 +357,33 @@ async function runPipeline() {
       result = await computeHash(algo, current);
     } catch(e) {
       appendStep(stepsEl, i+1, algo, 'ERRO: ' + e.message, true, false);
-      status.textContent = '✗ erro no pipeline'; return;
+      status.textContent = LANGS[currentLang].runErrStep; return;
     }
     appendStep(stepsEl, i+1, algo, result, false, isFinal);
     current = result;
   }
-  status.textContent = '✓ concluído';
+  status.textContent = LANGS[currentLang].runDone;
   setTimeout(() => status.textContent = '', 3000);
 }
 
 function appendStep(container, num, algo, value, isError, isFinal) {
   const div = document.createElement('div'); div.className = 'hash-step';
   const lbl = document.createElement('div'); lbl.className = 'hash-step-label';
-  lbl.textContent = `STEP ${num} // ${algo}${isFinal ? ' // RESULTADO FINAL' : ''}`;
+  lbl.textContent = `STEP ${num} // ${algo}${isFinal ? LANGS[currentLang].stepFinal : ''}`;
   const val = document.createElement('div');
   val.className = 'hash-value' + (isFinal ? ' final-hash' : '');
   if (isError) {
     val.style.color = 'var(--red)'; val.textContent = value;
   } else {
     val.textContent = value;
-    const hint = document.createElement('span'); hint.className = 'copy-hint'; hint.textContent = '[ clique para copiar ]';
+    const hint = document.createElement('span'); hint.className = 'copy-hint'; hint.textContent = LANGS[currentLang].copyHint;
     val.appendChild(hint);
     val.addEventListener('click', () => {
       navigator.clipboard.writeText(value).then(() => {
-        val.classList.add('copied'); hint.textContent = '[ copiado! ]';
-        setTimeout(() => { val.classList.remove('copied'); hint.textContent = '[ clique para copiar ]'; }, 2000);
-      }).catch(() => { hint.textContent = '[ erro ao copiar ]'; });
+        val.classList.add('copied'); hint.textContent = LANGS[currentLang].copied;
+        setTimeout(() => { val.classList.remove('copied'); hint.textContent = LANGS[currentLang].copyHint;
+        }, 2000);
+      }).catch(() => { hint.textContent = LANGS[currentLang].copyErr; });
     });
   }
   div.appendChild(lbl); div.appendChild(val); container.appendChild(div);
@@ -391,8 +394,8 @@ function saveProfiles() { try { localStorage.setItem('hf_profiles', JSON.stringi
 
 function saveProfile() {
   const name = document.getElementById('profileName').value.trim();
-  if (!name)            { alert('dê um nome ao perfil'); return; }
-  if (!pipeline.length) { alert('pipeline está vazio');  return; }
+  if (!name)            { alert(LANGS[currentLang].alertProfileName); return; }
+  if (!pipeline.length) { alert(LANGS[currentLang].alertPipelineEmpty); return; }
   profiles.push({ name, pipeline: [...pipeline] });
   saveProfiles(); renderProfiles();
   document.getElementById('profileName').value = '';
@@ -410,13 +413,13 @@ function buildTxtContent() {
   const saveNorm      = document.getElementById('exportNorm').checked;
   const lines = [];
   lines.push('════════════════════════════════════════════════════════════');
-  lines.push('  HASHFORGE — RESULTADO DO PIPELINE');
+  lines.push('  ' + LANGS[currentLang].txtHeader);
   lines.push('════════════════════════════════════════════════════════════');
   lines.push('');
-  lines.push('  Data/hora : ' + now);
-  if (savePhrase) lines.push('  Frase     : ' + document.getElementById('phraseInput').value);
-  if (saveNorm)   lines.push('  Norm.     : ' + getNorm());
-  lines.push('  Pipeline  : ' + pipeline.join(' → '));
+  lines.push(LANGS[currentLang].txtDate + now);
+  if (savePhrase) lines.push(LANGS[currentLang].txtPhrase + document.getElementById('phraseInput').value);
+  if (saveNorm)   lines.push(LANGS[currentLang].txtNorm + getNorm());
+  lines.push(LANGS[currentLang].txtPipeline + pipeline.join(' → '));
   lines.push('');
   lines.push('────────────────────────────────────────────────────────────');
   lines.push('');
@@ -431,7 +434,7 @@ function buildTxtContent() {
     lines.push('');
   });
   lines.push('────────────────────────────────────────────────────────────');
-  lines.push('  HashForge // 100% offline // Web Crypto API');
+  lines.push(LANGS[currentLang].txtFooter);
   lines.push('════════════════════════════════════════════════════════════');
   return lines.join('\n');
 }
@@ -449,7 +452,7 @@ function exportTxt() {
 // ── EXPORT ENCRYPTED (.enc — OpenSSL AES-256-CBC + PBKDF2 compatible) ─────────
 function exportEncrypted() {
   const content = buildTxtContent();
-  if (!content) { alert('Execute o pipeline primeiro.'); return; }
+  if (!content) { alert(LANGS[currentLang].encAlertRun); return; }
   showPasswordModal(async (password) => {
     if (!password) return;
     try {
@@ -487,7 +490,7 @@ function exportEncrypted() {
         'hashforge-' + new Date().toISOString().substring(0,10) + '.enc'
       );
     } catch(e) {
-      alert('Erro ao criptografar: ' + e.message);
+      alert(LANGS[currentLang].encAlertErr + e.message);
     }
   });
 }
@@ -504,22 +507,21 @@ function showPasswordModal(callback) {
   overlay.innerHTML = `
     <div style="background:var(--bg2);border:1px solid var(--border);padding:28px;min-width:340px;max-width:90vw;position:relative;">
       <div style="position:absolute;top:0;left:0;width:2px;height:100%;background:linear-gradient(to bottom,var(--green),transparent);opacity:.6;"></div>
-      <div style="font-size:15px;letter-spacing:2px;color:var(--text-dim);margin-bottom:16px;text-transform:uppercase;">criptografar arquivo</div>
+      <div style="font-size:15px;letter-spacing:2px;color:var(--text-dim);margin-bottom:16px;text-transform:uppercase;">${LANGS[currentLang].encTitle}</div>
       <div style="font-size:15px;color:var(--text-dim);margin-bottom:16px;line-height:1.7;letter-spacing:.5px;">
-        O arquivo será criptografado com <strong style="color:var(--green);">AES-256-CBC</strong> compatível com OpenSSL.<br>
-        Para descriptografar em qualquer Linux:<br>
+        ${LANGS[currentLang].encDesc}
         <span style="color:var(--green-dim);font-size:14px;letter-spacing:1px;">openssl enc -d -aes-256-cbc -pbkdf2 -in arquivo.enc -out resultado.txt</span>
       </div>
       <input id="hf-pwd" type="password"
         style="width:100%;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--green);font-family:'Inconsolata',monospace;font-size:16px;padding:8px 0;outline:none;caret-color:var(--green);letter-spacing:2px;margin-bottom:8px;"
-        placeholder="digite a senha..." autocomplete="off"/>
+        placeholder="${LANGS[currentLang].encPwd1}" autocomplete="off"/>
       <input id="hf-pwd2" type="password"
         style="width:100%;background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--green);font-family:'Inconsolata',monospace;font-size:16px;padding:8px 0;outline:none;caret-color:var(--green);letter-spacing:2px;margin-bottom:20px;"
-        placeholder="confirme a senha..." autocomplete="off"/>
+        placeholder="${LANGS[currentLang].encPwd2}" autocomplete="off"/>
       <div id="hf-pwd-err" style="font-size:15px;color:var(--red);min-height:16px;margin-bottom:12px;letter-spacing:1px;"></div>
       <div style="display:flex;gap:10px;">
-        <button id="hf-confirm" style="background:transparent;border:1px solid var(--green);color:var(--green);font-family:'Inconsolata',monospace;font-size:11px;padding:8px 20px;cursor:pointer;letter-spacing:2px;text-transform:uppercase;transition:all .12s;">confirmar</button>
-        <button id="hf-cancel"  style="background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:'Inconsolata',monospace;font-size:11px;padding:8px 20px;cursor:pointer;letter-spacing:2px;text-transform:uppercase;transition:all .12s;">cancelar</button>
+        <button id="hf-confirm" style="background:transparent;border:1px solid var(--green);color:var(--green);font-family:'Inconsolata',monospace;font-size:11px;padding:8px 20px;cursor:pointer;letter-spacing:2px;text-transform:uppercase;transition:all .12s;">${LANGS[currentLang].encConfirm}</button>
+        <button id="hf-cancel"  style="background:transparent;border:1px solid var(--border);color:var(--text-dim);font-family:'Inconsolata',monospace;font-size:11px;padding:8px 20px;cursor:pointer;letter-spacing:2px;text-transform:uppercase;transition:all .12s;">${LANGS[currentLang].encCancel}</button>
       </div>
     </div>`;
 
@@ -533,8 +535,8 @@ function showPasswordModal(callback) {
     const p1 = document.getElementById('hf-pwd').value;
     const p2 = document.getElementById('hf-pwd2').value;
     const err = document.getElementById('hf-pwd-err');
-    if (!p1)       { err.textContent = '⚠ senha não pode ser vazia'; return; }
-    if (p1 !== p2) { err.textContent = '⚠ senhas não coincidem';    return; }
+    if (!p1)       { err.textContent = LANGS[currentLang].encErrEmpty; return; }
+    if (p1 !== p2) { err.textContent = LANGS[currentLang].encErrMatch; return; }
     overlay.remove();
     callback(p1);
   };
@@ -553,16 +555,178 @@ function triggerDownload(blob, filename) {
   URL.revokeObjectURL(url);
 }
 
+
+// ── I18N ───────────────────────────────────────────────────────────────────────
+const LANGS = {
+  pt: {
+    notice:       'nenhuma requisição de rede. Todos os algoritmos usam a <strong style="color:var(--green)">Web Crypto API nativa do browser</strong> (implementação Mozilla/Firefox auditada). Zero código criptográfico manual.',
+    s01:          '01 // entrada de frase',
+    s02:          '02 // selecione os algoritmos',
+    algoDesc:     'Todos os algoritmos abaixo são nativos da Web Crypto API — implementação auditada pelo Mozilla, integrada ao Tor Browser. Clique para adicionar ao pipeline na ordem desejada.',
+    s03:          '03 // pipeline',
+    s04:          '04 // resultado',
+    s05:          '05 // perfis salvos',
+    iter:         '100k iterações',
+    keyDeriv:     'derivação de chave',
+    sha1Label:    '⚠ ALGORITMO LEGADO — USO RESTRITO',
+    sha1Desc:     'SHA-1 é criptograficamente quebrado desde 2017 (ataque SHAttered). Use apenas como etapa intermediária no pipeline — <strong>nunca como etapa final</strong>.',
+    sha1Note:     'somente etapa intermediária',
+    pipelineEmpty:'nenhum algoritmo selecionado — clique nos botões acima para adicionar',
+    clearBtn:     'limpar pipeline',
+    runBtn:       '▶ EXECUTAR PIPELINE',
+    exportPhrase: 'incluir frase original',
+    exportNorm:   'incluir frase normalizada',
+    exportTxt:    '⬇ exportar .txt',
+    exportEnc:    '🔒 exportar .enc (criptografado)',
+    saveProfile:  'salvar pipeline atual',
+    footer1:      'HASHFORGE v0.2.0 // USO PESSOAL',
+    footer2:      'WEB CRYPTO API // ZERO DEPENDÊNCIAS',
+    profileNamePh:'nome do perfil...',
+    phrasePh:     'digite sua frase aqui...',
+    normWaiting:  'aguardando entrada...',
+    normLabel:    'normalizado: ',
+    normEmpty:    '(vazio)',
+    pipelineRmTitle: 'remover',
+    profileDelTitle: 'excluir',
+    profilesEmpty:   'nenhum perfil salvo',
+    runProcessing:   'processando...',
+    runDone:         '✓ concluído',
+    runErrPhrase:    '⚠ insira uma frase',
+    runErrPipeline:  '⚠ pipeline vazio',
+    runErrStep:      '✗ erro no pipeline',
+    stepFinal:       ' // RESULTADO FINAL',
+    copyHint:        '[ clique para copiar ]',
+    copied:          '[ copiado! ]',
+    copyErr:         '[ erro ao copiar ]',
+    algoUnknown:     'algoritmo desconhecido: ',
+    alertProfileName:'dê um nome ao perfil',
+    alertPipelineEmpty:'pipeline está vazio',
+    encTitle:        'criptografar arquivo',
+    encDesc:         'O arquivo será criptografado com <strong style="color:var(--green)">AES-256-CBC</strong> compatível com OpenSSL.<br>Para descriptografar em qualquer Linux:<br>',
+    encPwd1:         'digite a senha...',
+    encPwd2:         'confirme a senha...',
+    encConfirm:      'confirmar',
+    encCancel:       'cancelar',
+    encErrEmpty:     '⚠ senha não pode ser vazia',
+    encErrMatch:     '⚠ senhas não coincidem',
+    encAlertErr:     'Erro ao criptografar: ',
+    encAlertRun:     'Execute o pipeline primeiro.',
+    txtHeader:       'HASHFORGE — RESULTADO DO PIPELINE',
+    txtDate:         '  Data/hora : ',
+    txtPhrase:       '  Frase     : ',
+    txtNorm:         '  Norm.     : ',
+    txtPipeline:     '  Pipeline  : ',
+    txtFooter:       '  HashForge // 100% offline // Web Crypto API',
+  },
+  en: {
+    notice:       'no network requests. All algorithms use the <strong style="color:var(--green)">native browser Web Crypto API</strong> (Mozilla/Firefox audited implementation). Zero manual cryptographic code.',
+    s01:          '01 // phrase input',
+    s02:          '02 // select algorithms',
+    algoDesc:     'All algorithms below are native to the Web Crypto API — audited Mozilla implementation, built into Tor Browser. Click to add to the pipeline in the desired order.',
+    s03:          '03 // pipeline',
+    s04:          '04 // result',
+    s05:          '05 // saved profiles',
+    iter:         '100k iterations',
+    keyDeriv:     'key derivation',
+    sha1Label:    '⚠ LEGACY ALGORITHM — RESTRICTED USE',
+    sha1Desc:     'SHA-1 has been cryptographically broken since 2017 (SHAttered attack). Use only as an intermediate step in the pipeline — <strong>never as the final step</strong>.',
+    sha1Note:     'intermediate step only',
+    pipelineEmpty:'no algorithm selected — click the buttons above to add',
+    clearBtn:     'clear pipeline',
+    runBtn:       '▶ RUN PIPELINE',
+    exportPhrase: 'include original phrase',
+    exportNorm:   'include normalized phrase',
+    exportTxt:    '⬇ export .txt',
+    exportEnc:    '🔒 export .enc (encrypted)',
+    saveProfile:  'save current pipeline',
+    footer1:      'HASHFORGE v0.2.0 // PERSONAL USE',
+    footer2:      'WEB CRYPTO API // ZERO DEPENDENCIES',
+    profileNamePh:'profile name...',
+    phrasePh:     'type your phrase here...',
+    normWaiting:  'waiting for input...',
+    normLabel:    'normalized: ',
+    normEmpty:    '(empty)',
+    pipelineRmTitle: 'remove',
+    profileDelTitle: 'delete',
+    profilesEmpty:   'no profiles saved',
+    runProcessing:   'processing...',
+    runDone:         '✓ done',
+    runErrPhrase:    '⚠ enter a phrase',
+    runErrPipeline:  '⚠ pipeline is empty',
+    runErrStep:      '✗ pipeline error',
+    stepFinal:       ' // FINAL RESULT',
+    copyHint:        '[ click to copy ]',
+    copied:          '[ copied! ]',
+    copyErr:         '[ copy failed ]',
+    algoUnknown:     'unknown algorithm: ',
+    alertProfileName:'enter a profile name',
+    alertPipelineEmpty:'pipeline is empty',
+    encTitle:        'encrypt file',
+    encDesc:         'The file will be encrypted with <strong style="color:var(--green)">AES-256-CBC</strong> compatible with OpenSSL.<br>To decrypt on any Linux:<br>',
+    encPwd1:         'enter password...',
+    encPwd2:         'confirm password...',
+    encConfirm:      'confirm',
+    encCancel:       'cancel',
+    encErrEmpty:     '⚠ password cannot be empty',
+    encErrMatch:     '⚠ passwords do not match',
+    encAlertErr:     'Encryption error: ',
+    encAlertRun:     'Run the pipeline first.',
+    txtHeader:       'HASHFORGE — PIPELINE RESULT',
+    txtDate:         '  Date/time : ',
+    txtPhrase:       '  Phrase    : ',
+    txtNorm:         '  Norm.     : ',
+    txtPipeline:     '  Pipeline  : ',
+    txtFooter:       '  HashForge // 100% offline // Web Crypto API',
+  }
+};
+
+let currentLang = navigator.language.startsWith('pt') ? 'pt' : 'en';
+
+function setLang(lang) {
+  currentLang = lang;
+  document.getElementById('btn-pt').classList.toggle('active', lang === 'pt');
+  document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+  document.documentElement.lang = lang === 'pt' ? 'pt-BR' : 'en';
+
+  const t = LANGS[lang];
+
+  // Static data-i18n elements (innerHTML for those with HTML, textContent for plain)
+  const htmlKeys = ['notice','sha1Desc','algoDesc','encDesc'];
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (!t[key]) return;
+    if (htmlKeys.includes(key)) el.innerHTML = t[key];
+    else el.textContent = t[key];
+  });
+
+  // Placeholders
+  document.getElementById('phraseInput').placeholder = t.phrasePh;
+  document.getElementById('profileName').placeholder  = t.profileNamePh;
+
+  // Normalized preview (only update the waiting text if input is empty)
+  if (!document.getElementById('phraseInput').value) {
+    document.getElementById('normPreview').textContent = t.normWaiting;
+  }
+
+  // Re-render pipeline (for remove button titles)
+  renderPipeline();
+  renderProfiles();
+}
+
+// Override functions that use text to be lang-aware
+const _origRenderPipeline = renderPipeline;
+
 // ── INIT ───────────────────────────────────────────────────────────────────────
 renderProfiles();
+setLang(currentLang);
 
 function renderProfiles() {
   const list = document.getElementById('profileList');
-  if (!profiles.length) { list.innerHTML = '<div class="profiles-empty">nenhum perfil salvo</div>'; return; }
+  if (!profiles.length) { list.innerHTML = '<div class="profiles-empty">' + LANGS[currentLang].profilesEmpty + '</div>'; return; }
   list.innerHTML = '';
   profiles.forEach((p, i) => {
     const item = document.createElement('div'); item.className = 'profile-item';
-    item.innerHTML = `<span class="profile-name">${p.name}</span><span class="profile-pipe">${p.pipeline.join(' → ')}</span><button class="profile-del" title="excluir">×</button>`;
+    item.innerHTML = `<span class="profile-name">${p.name}</span><span class="profile-pipe">${p.pipeline.join(' → ')}</span><button class="profile-del" title="${LANGS[currentLang].profileDelTitle}">×</button>`;
     item.querySelector('.profile-del').addEventListener('click', e => deleteProfile(i, e));
     item.addEventListener('click', () => loadProfile(i));
     list.appendChild(item);
